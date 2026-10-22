@@ -1,0 +1,13 @@
+[package]
+name = "nvim-markdown-clipboard"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+arboard = "3.7"
+htmd = "0.5"
+mlua = { version = "0.12", features = ["luajit", "module"] }
+pulldown-cmark = "0.13"

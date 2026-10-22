@@ -4,24 +4,37 @@ Copy Markdown from Neovim as rich HTML, or paste rich HTML from the system clipb
 
 ## Install
 
-Build the Rust helper with `cargo build --release`. Add this repository to your Neovim runtime path and point the plugin at the resulting executable:
+Rust and Cargo are required to build the native module. With lazy.nvim, add this file as `lua/akil/plugin_setup/markdown_clipboard.lua` in your config:
+
+```lua
+return {
+  "AKil47/nvim-markdown-clipboard",
+  build = "cargo build --release",
+  config = function()
+    local clipboard = require("markdown_clipboard")
+    vim.keymap.set("n", "<leader>my", clipboard.copy, { expr = true, desc = "Copy Markdown as HTML" })
+    vim.keymap.set("x", "<leader>my", clipboard.copy, { desc = "Copy Markdown as HTML" })
+    vim.keymap.set({ "n", "i" }, "<leader>mp", clipboard.paste, { desc = "Paste HTML as Markdown" })
+  end,
+}
+```
+
+For a manual install, build with `cargo build --release` and add this repository to your Neovim runtime path. The plugin loads the library from `target/release` automatically. If you place it elsewhere, pass its path:
 
 ```lua
 require("markdown_clipboard").setup({
-  binary = "/path/to/nvim-markdown-clipboard/target/release/nvim-markdown-clipboard",
+  library = "/path/to/libnvim_markdown_clipboard.so",
 })
 ```
 
-On Windows, add `.exe` to the binary path. You can also put the executable on your `PATH` and omit `setup()`.
+On Windows the library is `nvim_markdown_clipboard.dll`; on macOS it is `libnvim_markdown_clipboard.dylib`. Neovim loads the Rust Lua module directly, without starting a process for each copy or paste.
 
-## API and example mappings
+## API
 
 ```lua
 local clipboard = require("markdown_clipboard")
-
-vim.keymap.set("n", "<leader>my", clipboard.copy, { expr = true, desc = "Copy Markdown as HTML" })
-vim.keymap.set("x", "<leader>my", clipboard.copy, { desc = "Copy Markdown as HTML" })
-vim.keymap.set({ "n", "i" }, "<leader>mp", clipboard.paste, { desc = "Paste HTML as Markdown" })
+clipboard.copy()  -- operator in normal mode, selection in Visual mode
+clipboard.paste() -- insert clipboard HTML as Markdown
 ```
 
 In normal mode, follow the copy mapping with a motion or text object (`<leader>myip`, for example). In Visual mode, select text first, then invoke the mapping. `paste()` inserts converted Markdown at the cursor.
