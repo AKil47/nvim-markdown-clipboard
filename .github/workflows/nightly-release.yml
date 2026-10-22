@@ -57,9 +57,9 @@ jobs:
           path: dist
       - name: Name release assets
         run: |
+          mkdir release
           for directory in dist/*; do
-            mv "$directory"/* "dist/$(basename "$directory")"
-            rmdir "$directory"
+            cp "$directory"/* "release/$(basename "$directory")"
           done
       - name: Replace rolling release
         env:
@@ -69,7 +69,7 @@ jobs:
           if gh release view nightly >/dev/null 2>&1; then
             gh release delete nightly --cleanup-tag --yes
           fi
-          gh release create nightly dist/* \
+          gh release create nightly release/* \
             --target "${{ github.sha }}" \
             --title "Nightly" \
             --notes "Automated native builds from ${{ github.sha }}." \
