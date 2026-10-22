@@ -1,0 +1,76 @@
+name: Rolling native build
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: rolling-release
+  cancel-in-progress: true
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-latest
+            asset: nvim_markdown_clipboard-linux-x64.so
+            library: libnvim_markdown_clipboard.so
+          - runner: ubuntu-24.04-arm
+            asset: nvim_markdown_clipboard-linux-arm64.so
+            library: libnvim_markdown_clipboard.so
+          - runner: windows-latest
+            asset: nvim_markdown_clipboard-windows-x64.dll
+            library: nvim_markdown_clipboard.dll
+          - runner: windows-11-arm
+            asset: nvim_markdown_clipboard-windows-arm64.dll
+            library: nvim_markdown_clipboard.dll
+          - runner: macos-15-intel
+            asset: nvim_markdown_clipboard-macos-x64.dylib
+            library: libnvim_markdown_clipboard.dylib
+          - runner: macos-15
+            asset: nvim_markdown_clipboard-macos-arm64.dylib
+            library: libnvim_markdown_clipboard.dylib
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo build --release --locked
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.asset }}
+          path: target/release/${{ matrix.library }}
+          if-no-files-found: error
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+      - name: Name release assets
+        run: |
+          for directory in dist/*; do
+            mv "$directory"/* "dist/$(basename "$directory")"
+            rmdir "$directory"
+          done
+      - name: Replace rolling release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          if gh release view nightly >/dev/null 2>&1; then
+            gh release delete nightly --cleanup-tag --yes
+          fi
+          gh release create nightly dist/* \
+            --target "${{ github.sha }}" \
+            --title "Nightly" \
+            --notes "Automated native builds from ${{ github.sha }}." \
+            --prerelease

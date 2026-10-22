@@ -8,6 +8,10 @@ local function default_library()
   local root = vim.fn.fnamemodify(source, ":h:h:h")
   local name = vim.fn.has("win32") == 1 and "nvim_markdown_clipboard.dll"
     or (vim.fn.has("mac") == 1 and "libnvim_markdown_clipboard.dylib" or "libnvim_markdown_clipboard.so")
+  local manifest = root .. "/target/release/native-library.txt"
+  if vim.fn.filereadable(manifest) == 1 then
+    return root .. "/target/release/" .. vim.fn.readfile(manifest)[1]
+  end
   return root .. "/target/release/" .. name
 end
 

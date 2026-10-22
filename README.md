@@ -4,12 +4,11 @@ Copy Markdown from Neovim as rich HTML, or paste rich HTML from the system clipb
 
 ## Install
 
-Rust and Cargo are required to build the native module. With lazy.nvim, add this file as `lua/akil/plugin_setup/markdown_clipboard.lua` in your config:
+With lazy.nvim, add this file as `lua/akil/plugin_setup/markdown_clipboard.lua` in your config. The repository's `build.lua` downloads a native library from the rolling GitHub release when the plugin is installed or updated. Users need `curl`, but do not need Rust or Cargo:
 
 ```lua
 return {
   "AKil47/nvim-markdown-clipboard",
-  build = "cargo build --release",
   config = function()
     local clipboard = require("markdown_clipboard")
     vim.keymap.set("n", "<leader>my", clipboard.copy, { expr = true, desc = "Copy Markdown as HTML" })
@@ -19,7 +18,9 @@ return {
 }
 ```
 
-For a manual install, build with `cargo build --release` and add this repository to your Neovim runtime path. The plugin loads the library from `target/release` automatically. If you place it elsewhere, pass its path:
+The rolling release is rebuilt from each commit on `main`. If an update reaches lazy.nvim before its native build is published, run `:Lazy build nvim-markdown-clipboard` after the release appears.
+
+For a manual install or development, build with `cargo build --release` and add this repository to your Neovim runtime path. The plugin loads the library from `target/release` automatically. If you place it elsewhere, pass its path:
 
 ```lua
 require("markdown_clipboard").setup({
